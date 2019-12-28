@@ -8,7 +8,7 @@ import sys
 def eprint(*args, **kwargs):                    #prints errors/warnings to stderr
     print(*args, file=sys.stderr, **kwargs)
 
-
+# no use
 class Likelihood(object):
     """
     Base class for likelihoods. Each inherited classs needs to implement jointpdf
@@ -31,7 +31,7 @@ class Likelihood(object):
         to have been taken at positions Xn.
         """
         raise NotImplementedError 
-
+# use Gaussian
 class Gaussian(Likelihood):
     """
     Gaussian likelihood default jointpdf uses the geometric mean likelihood of all models.

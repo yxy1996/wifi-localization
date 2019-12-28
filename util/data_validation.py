@@ -16,20 +16,24 @@ def data_structure(din):
         formated deep copy of data
     """
         
-    if not all(k in din for k in ('X','Y','Var')):  
+    # yexingyu 2019/12/12 modify    
+    # if not all(k in din for k in ('X','Y','Var')):  
+    #     raise IOError       # If all keys are not present in dict, raise error
+
+    if not all(k in din for k in ('X','Y')):  
         raise IOError       # If all keys are not present in dict, raise error
 
     assert din['X'].shape[1] == 2
     assert din['Y'].shape[0] == din['Y'].shape[0]
-    assert din['Var'].shape[0] == din['Var'].shape[0]
+    #   assert din['Var'].shape[0] == din['Var'].shape[0]  # yexingyu 2019/12/12 modify
 
     data = copy.deepcopy(din)
-
-    if data['Y'].ndim == 1:
-        data['Y'] = np.reshape(data['Y'],(data['Y'].shape[0],1))       #casting into [p,1]
+    # these fucking codes are useless   
+    # if data['Y'].ndim == 1:
+    #     data['Y'] = np.reshape(data['Y'],(data['Y'].shape[0],1))       #casting into [p,1]
         
-    if data['Var'].ndim == 1:
-        data['Var'] = np.reshape(data['Var'],(data['Var'].shape[0],1)) #casting into [p,1]
+    # if data['Var'].ndim == 1:
+    #     data['Var'] = np.reshape(data['Var'],(data['Var'].shape[0],1)) #casting into [p,1]
 
     return data
 

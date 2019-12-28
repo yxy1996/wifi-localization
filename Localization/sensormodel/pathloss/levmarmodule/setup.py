@@ -1,12 +1,12 @@
 from distutils.core import setup, Extension
 
-module1 = Extension('levmar',
+module1 = Extension('levmars',
                     sources = ['levmarmodule.c'],
-                    libraries = ['m','levmar','lapack','blas','f2c'],
+                    libraries = ['m','lapack','blas','f2c'],
                     extra_compile_args = ['-Ofast'],
                     )
 
-setup (name = 'levmar',
+setup (name = 'levmars',
        version = '1.1',
        description = 'Levmar package',
        ext_modules = [module1],)

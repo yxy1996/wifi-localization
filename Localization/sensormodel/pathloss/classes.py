@@ -55,7 +55,7 @@ class PathLoss(object):
             data  = data_validation.data_structure(dataTest)
     
         Ys  = self.mean_val(data['X']) #bounded estimation       
-        log_prob = stats.norm.logpdf(Ys,loc=data['Y'],scale=data['Var']**0.5)
+        log_prob = stats.norm.logpdf(Ys,loc=data['Y'],scale=data['Var']**0.5)   # return the 
         return -np.sum(log_prob)
     
 
@@ -132,10 +132,11 @@ class PathLoss(object):
         pinit = self.params_init()  #first parameters are current parameters                    
         p0.append(pinit)
         for theta in np.linspace(0,2*np.pi,ntimes-1,endpoint=False):           
-            pi = pinit
+            pi = pinit      #should be pinit.copy()? does't matter
             pi[:,0] += np.cos(theta)
             pi[:,1] += np.sin(theta)
-            p0.append(pi)   #generates new set of initial params
+            p0.append(pi)   #generates new set of initial params  
+                            #generate initial params from different angles.
         
 
         #Initiating optimization
@@ -153,7 +154,7 @@ class PathLoss(object):
                     print 'Access Point: ', ap
                     #print self.params[ap:ap+1]
             
-                args = (ap,self.mean_val,self.data)
+                args = (ap,self.mean_val,self.data)     # arguments to pass to self.null_optimize.
                 params0 = p0[ntime][ap:ap+1,:] #initial parameter from p0
                 x,f,d = scipy.optimize.fmin_l_bfgs_b(self.nll_optimize, params0,
                                                args=args,approx_grad=True) #optimization alg

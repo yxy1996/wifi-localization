@@ -2,11 +2,11 @@ import numpy as np
 import scipy
 import scipy.stats as stats
 import copy
-import levmar
+import levmars as levmar
 from util import data_validation 
 from util.distance import euclidean_squared
 
-
+# most important part here
 class FLog(object):
     """
     Base class for path loss functions. Each inherited class needs to implement 
@@ -53,6 +53,9 @@ class FLog(object):
 
     def cv(self,dataTest=None):
         """
+        yxy"
+        start with different initial estimates and cross-validating,
+
         Cross validation value used for comparing different function optimization outputs
         can be computed with a separate dataset test or with training dataset
         
@@ -64,7 +67,7 @@ class FLog(object):
         """
 
         if dataTest is None:
-            data = self.data
+            data = self.data  
         else:
             data  = data_validation.data_structure(dataTest)
 
@@ -90,7 +93,7 @@ class FLog(object):
         z_list = self.data['Y'].T.flatten().tolist()
         p_estimate = levmar.optimize(x_list,y_list,z_list)
         self.params = np.reshape(np.asarray(p_estimate),self.params.shape)
-        
+
 
     def new_data(self):
         """

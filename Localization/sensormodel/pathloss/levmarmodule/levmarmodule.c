@@ -1,9 +1,15 @@
 #include <Python.h>
 #include <math.h>
 
-#include <levmar.h>
 #include <float.h>
 #include <sys/time.h>                // for gettimeofday()
+#include "/home/yxy/levmar-2.6/levmar.h"
+#include "/home/yxy/levmar-2.6/lm.c"
+#include "/home/yxy/levmar-2.6/Axb.c"
+#include "/home/yxy/levmar-2.6/compiler.h"
+#include "/home/yxy/levmar-2.6/misc.h"
+#include "/home/yxy/levmar-2.6/misc.c"
+
 
 #define max_size 1000
 #define max_ap 1000
@@ -92,7 +98,7 @@ void distance_squared(double *d2, double *p, void *data){
     twop3 = 2*p[3];
 
     for(i=0; i<n; ++i){
-        d2[i] = dat->x2y2[i] + p22p32 - dat->x[i]*twop2 - dat->y[i]*twop3;
+        d2[i] = dat->x2y2[i] + p22p32 - dat->x[i]*twop2 - dat->y[i]*twop3; //god damn...
     } 
 }
 
@@ -100,6 +106,8 @@ void modelfun(double *p, double *e, int m, int n, void *data){
     /* error model function E = [sign(z)+(1-sign(z))*sigmoid(zp)]*(zp-z)^2 
                            zp = p0-p1log(d2)        d2 = (x-p2)^2+(y-p3)^2 
     */
+
+
     register int i;
     double *d2 = (double *) PyMem_Malloc(sizeof(double)*n);
     double zp, sigmoid_zp; //w=0;    
@@ -122,6 +130,7 @@ void modelfun(double *p, double *e, int m, int n, void *data){
         }
     }
     if(debug){fprintf(f, "%.3f %.3f %.3f %.3f %.3f \n", p[0], p[1], p[2], p[3], 1.);}
+
     PyMem_Free(d2);
 }
 
@@ -220,12 +229,11 @@ void init_ap(double *p, void *data){
     
     xavg = xavg/zsum;
     yavg = yavg/zsum;
-    if(debug){printf("Weighted xy:              \t %6.2f %6.2f\n", xavg, yavg);}      
 
+    if(debug){printf("Weighted xy:              \t %6.2f %6.2f\n", xavg, yavg);}      
     xzc  = xzc/nzeros;
     yzc  = yzc/nzeros;
-    if(debug){printf("Zeros c:                  \t %6.2f %6.2f\n", xzc,  yzc);}      
-    
+    if(debug){printf("Zeros c:                  \t %6.2f %6.2f\n", xzc,  yzc);}     
     /* Distance from XYmax to XYzeros */
     xzc = xavg-xzc;
     yzc = yavg-yzc;
@@ -233,11 +241,11 @@ void init_ap(double *p, void *data){
     temp  = sqrt(xzc*xzc+yzc*yzc);
     xzc = xzc/(temp+0.1);
     yzc = yzc/(temp+0.1);
-
     if(debug){printf("dXY to zeros c:           \t %6.2f %6.2f\n", xzc, yzc);}      
     temp  = (50-50*zmax);
     xmax = xavg+temp*xzc; //pushes p[2] away from center of zeros
     ymax = yavg+temp*yzc; //pushes p[3] away from center of zeros
+    if(debug){printf("max           :           \t %6.2f %6.2f\n", xmax, ymax);}      
 
     /* Try two optiosn, xmax far from xzeros, xavg */
     // Option 1    
@@ -248,7 +256,6 @@ void init_ap(double *p, void *data){
     modelfun(p,e,m,n,data);
     temax = 0.0;
     for(i=0; i<n; i++){temax += e[i]*e[i];} //temax = N*sigma^2
-    if(debug){printf("Shifted Max xy [sum of squares] \t %6.2f %6.2f [%12.9f]\n", xmax, ymax, temax);}    
 
     // Option 2
     p[0] = p0init; p[1] = p1init;    
@@ -457,19 +464,20 @@ void irls(double *p, int m, int n, void *data){
     ret=dlevmar_der(modelfun, jacmodelfunp23, p, NULL, m, n, 200, coarse_opts, info, NULL, NULL, (void *)data); 
     if(ret!=-1){
         if(debug){
-            printf("  [%.9f] -> [%.9f] Aftern Levenberg-Marquardt (%g iter, reason %g)\n",info[0],info[1],info[5],info[6]);
+            printf("  [%.9f] -> [%.9f] Aftern Levenberg-Marquardt (%g iter, reason %g, yxy %.9f)\n",info[0],info[1],info[5],info[6],info[2]);
             printf("\t%.3f %.3f %.3f %.3f\n", p[0], p[1], p[2], p[3]);      
         }
     }
     
     // Optimization with p[2], p[3] fixed
-    ret=dlevmar_der(modelfun, jacmodelfunp01, p, NULL, m, n, 200, coarse_opts, info, NULL, NULL, (void *)data); 
+    ret=dlevmar_der(modelfun, jacmodelfunp01, p, NULL, m, n, 50, coarse_opts, info, NULL, NULL, (void *)data); 
     if(ret!=-1){
         if(debug){
             printf("  [%.9f] -> [%.9f] Aftern Levenberg-Marquardt (%g iter, reason %g)\n",info[0],info[1],info[5],info[6]);
             printf("\t%.3f %.3f %.3f %.3f\n", p[0], p[1], p[2], p[3]);      
         }
     }
+
 
 }
 
@@ -485,8 +493,8 @@ static PyObject *levmar_optimization(PyObject *self, PyObject *args){
     double p0_prev, p1_prev;
 
     if(debug)
-        f = fopen("/home/renato/Desktop/parameters.txt", "w");
-        f2= fopen("/home/renato/Desktop/results.txt","w");
+        f = fopen("/home/yxy/Desktop/parameters.txt", "w");
+        f2= fopen("/home/yxy/Desktop/results.txt","w");
 
     /* Load data from python */
     xtradata *data = (xtradata *) PyMem_Malloc(sizeof(xtradata));
@@ -504,7 +512,7 @@ static PyObject *levmar_optimization(PyObject *self, PyObject *args){
     gettimeofday(&t1, NULL);
     for (i=0; i<nap; i++){
         convergence=0;
-        p[0]=.6; p[1]=0.1;
+        p[0]=0.6; p[1]=0.1;
 
         data->ap = i;
 
@@ -540,7 +548,7 @@ static PyObject *levmar_optimization(PyObject *self, PyObject *args){
         elapsedTime += (t4.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
         printf("Total time  %8.3f\n",elapsedTime);
     }
-    
+
     PyObject *result;
     PyObject *value;
 
@@ -559,6 +567,7 @@ static PyObject *levmar_optimization(PyObject *self, PyObject *args){
     if(debug)
         fclose(f);
         fclose(f2);
+     printf("Total time  %8.3f\n",elapsedTime);
 
     /* Freeing dynamic memory */
     PyMem_Free(data);
@@ -577,15 +586,19 @@ static PyMethodDef LevmarMethods[] = {
 };
 
 /* Initialization function */
-PyMODINIT_FUNC initlevmar(void){
-    (void) Py_InitModule("levmar", LevmarMethods);
+PyMODINIT_FUNC initlevmars(void){
+    (void) Py_InitModule("levmars", LevmarMethods);
 }
+
+
+
 
 /* main */
 int main(int argc, char *argv[]){
     Py_SetProgramName(argv[0]);     // Pass argv[0] to the Python interpreter
     Py_Initialize();    // Initialize Python interpreter
-    initlevmar();       // Add static module
+    initlevmars();       // Add static module
     Py_Exit(0);         // Close Python interpreter
     return 1;   
 }
+

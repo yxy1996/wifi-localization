@@ -15,6 +15,8 @@ class hGP(GPcore):
     """
     def __init__(self,data,**kwargs):
         super(hGP,self).__init__(data,**kwargs)
+        print 'hybrid method started'
+
         self.name = 'GP with pathloss'        
         self.pathloss = kwargs.pop('pathloss',FLog(self.data))
         #raises error if pathloss is not a derived class of PathLoss
@@ -24,15 +26,22 @@ class hGP(GPcore):
 
         self.ndata = None
         self.gp    = '\n-> Run optimize()'
-
         if self.debug:
             print 'class hGP init works'
     
     def optimize(self,**kwargs):
         AP = kwargs.pop('AP','all')
         ntimes = kwargs.pop('ntimes',1)
+        # print 'here_1:'
+        # print(self.pathloss.data['X'].shape)
         self.pathloss.optimize(AP=AP,ntimes=ntimes,verbose=self.verbose)
+        
         self.ndata = self.pathloss.new_data()
+        print 'path loss training finished'
+
+        # print 'here_2:'
+        # print(self.pathloss.params.shape)
+        #kernal = GPy.kern.Matern32(variance=10.,lengthscale=10.,input_dim=2)
 
         self.gp = GPy.models.GPRegression(self.ndata['X'],self.ndata['Y'],**kwargs)
         self.gp.optimize()
